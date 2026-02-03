@@ -1,0 +1,36 @@
+{
+    "name": "digisoul/private-captcha",
+    "description": "private captcha support for statamic",
+    "autoload": {
+        "psr-4": {
+            "Digisoul\\PrivateCaptcha\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Digisoul\\PrivateCaptcha\\Tests\\": "tests"
+        }
+    },
+    "require": {
+        "statamic/cms": "^5.0",
+        "private-captcha/private-captcha-php": "^0.0.10"
+    },
+    "config": {
+        "allow-plugins": {
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "extra": {
+        "statamic": {
+            "name": "Private Captcha",
+            "description": "Private Captcha addon"
+        },
+        "laravel": {
+            "providers": [
+                "Digisoul\\PrivateCaptcha\\ServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
