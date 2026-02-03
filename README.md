@@ -18,7 +18,7 @@ php please vendor:publish --tag=private-captcha-config
 
 ## How to Use
 
-add the {{ captcha:script }} in the <head>
+add the {{ captcha:script }} in the head
 
 add the {{ captcha }} tag in your form
 
