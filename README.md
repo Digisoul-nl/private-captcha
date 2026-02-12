@@ -10,13 +10,21 @@ You can install this addon via Composer:
 composer require digisoul/private-captcha
 ```
 
-publish the config file:
+if you want to customize the .env variable names you can publish the config file:
 
 ``` bash
 php please vendor:publish --tag=private-captcha-config
 ```
+otherwise update your .env to include the following values:
+
+```
+PRIVATECAPTCHA_KEY=
+PRIVATECAPTCHA_SITEKEY=
+```
 
 ## How to Use
+
+
 
 add the {{ captcha:script }} in the head
 
