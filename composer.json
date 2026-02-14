@@ -1,6 +1,7 @@
 {
     "name": "digisoul/private-captcha",
     "description": "private captcha support for statamic",
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Digisoul\\PrivateCaptcha\\": "src"
