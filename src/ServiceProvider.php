@@ -17,8 +17,4 @@ class ServiceProvider extends AddonServiceProvider
         \Statamic\Events\FormSubmitted::class => [Listeners\HandleCaptcha::class],
     ];
 
-    public function bootAddon()
-    {
-        //
-    }
 }
