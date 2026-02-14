@@ -3,21 +3,12 @@
 namespace Digisoul\PrivateCaptcha\Listeners;
 
 use Illuminate\Validation\ValidationException;
+use PrivateCaptcha\Client;
 use PrivateCaptcha\Exceptions\SolutionException;
 use Statamic\Events\FormSubmitted;
-use PrivateCaptcha\Client;
 
 class HandleCaptcha
 {
-    private Client $client;
-    /**
-     * Create the event listener.
-     */
-    public function __construct()
-    {
-        $this->client = new Client(config('private-captcha.key'));
-    }
-
     /**
      * Handle the event.
      */
@@ -25,16 +16,15 @@ class HandleCaptcha
     {
         $solution = request()->input('private_captcha_solution');
 
-        if(!$solution) {
-            throw ValidationException::withMessages(['Invalid Captcha.']);
+        if (!$solution) {
+            throw ValidationException::withMessages(['captcha' => 'Invalid Captcha.']);
         }
 
         try {
-            $this->client->verify($solution);
-            return;
-
+            $client = new Client(config('private-captcha.key'));
+            $client->verify($solution);
         } catch (SolutionException $e) {
-            throw ValidationException::withMessages(['Invalid Captcha.']);
+            throw ValidationException::withMessages(['captcha' => 'Invalid Captcha.']);
         }
     }
 }

@@ -2,14 +2,13 @@
 
 namespace Digisoul\PrivateCaptcha\Tags;
 
+use Illuminate\Support\Facades\Log;
 use Statamic\Tags\Tags;
 
 class Captcha extends Tags
 {
     /**
      * The {{ captcha }} tag.
-     *
-     * @return string|array
      */
     public function index()
     {
@@ -19,7 +18,7 @@ class Captcha extends Tags
             if (app()->environment('local')) {
                 throw new \RuntimeException('PrivateCaptcha sitekey is not configured.');
             }
-            \Log::warning('PrivateCaptcha sitekey is missing. CAPTCHA will not function properly.');
+            Log::warning('PrivateCaptcha sitekey is missing. CAPTCHA will not function properly.');
         }
 
         return view('privateCaptcha::captcha', [
@@ -28,7 +27,11 @@ class Captcha extends Tags
         ]);
     }
 
-    public function script() {
+    /**
+     * The {{ captcha:script }} tag.
+     */
+    public function script()
+    {
         return view('privateCaptcha::captcha-script');
     }
 }
