@@ -30,6 +30,8 @@ add the {{ captcha:script }} in the head
 
 add the {{ captcha }} tag in your form
 
-add a display parameter if needed
+add a display parameter if needed, e.g. `{{ captcha display="hidden" }}` for a
+hidden widget. Hidden widgets are fully supported: the injected script holds the
+form submission until the captcha solution has been computed before posting.
 
 
