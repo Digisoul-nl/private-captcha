@@ -1,16 +1,66 @@
 <script defer src="https://cdn.privatecaptcha.com/widget/js/privatecaptcha.js"></script>
 <script>
+    // With a hidden widget (data-display-mode="hidden") the captcha only writes
+    // its solution into the form AFTER execute() runs. Calling execute() on submit
+    // without waiting POSTs the form with an empty `private_captcha_solution`, so
+    // the server rejects it with "Invalid Captcha.". Here we hold the submission
+    // until the solution is present (with a safety timeout) before letting it go.
     document.addEventListener("DOMContentLoaded", () => {
+        const SOLUTION_FIELD = "private_captcha_solution";
+        const MAX_WAIT_MS = 8000;
+        const POLL_INTERVAL_MS = 150;
 
-        document.querySelectorAll("form").forEach(form => {
-            form.addEventListener("submit", () => {
-                window.privateCaptcha.autoWidget.execute();
-                sessionStorage.setItem("restoreScroll", window.scrollY);
+        const solutionValue = (form) => {
+            const fields = form.querySelectorAll(`[name="${SOLUTION_FIELD}"]`);
+            // The widget injects its own hidden input in addition to the template's
+            // empty one; take the last non-empty value (that's the real solution).
+            for (let i = fields.length - 1; i >= 0; i--) {
+                if (fields[i].value) return fields[i].value;
+            }
+            return "";
+        };
+
+        document.querySelectorAll("form").forEach((form) => {
+            // Only manage forms that actually contain a captcha widget.
+            if (!form.querySelector(".private-captcha")) return;
+
+            let releasing = false;
+
+            form.addEventListener("submit", (event) => {
+                // Second pass (after requestSubmit) or solution already present:
+                // let the native submission proceed.
+                if (releasing || solutionValue(form)) {
+                    sessionStorage.setItem("restoreScroll", window.scrollY);
+                    return;
+                }
+
+                // No solution yet: block the POST, finalize the captcha, then submit.
+                event.preventDefault();
+
+                try {
+                    window.privateCaptcha?.autoWidget?.execute();
+                } catch (e) {
+                    /* widget not ready; the poll below will time out and submit */
+                }
+
+                const startedAt = Date.now();
+                const timer = setInterval(() => {
+                    const ready = solutionValue(form);
+                    if (ready || Date.now() - startedAt > MAX_WAIT_MS) {
+                        clearInterval(timer);
+                        releasing = true;
+                        sessionStorage.setItem("restoreScroll", window.scrollY);
+                        if (typeof form.requestSubmit === "function") {
+                            form.requestSubmit();
+                        } else {
+                            form.submit();
+                        }
+                    }
+                }, POLL_INTERVAL_MS);
             });
         });
 
         const savedScroll = sessionStorage.getItem("restoreScroll");
-
         if (savedScroll !== null) {
             window.scrollTo(0, parseInt(savedScroll, 10));
             sessionStorage.removeItem("restoreScroll");
