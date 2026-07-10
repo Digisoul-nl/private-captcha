@@ -6,3 +6,6 @@ webpack.mix.js
 yarn.lock
 composer.lock
 /vendor
+
+# Personal Claude Code context (never commit)
+CLAUDE.local.md
