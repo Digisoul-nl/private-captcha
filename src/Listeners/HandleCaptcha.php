@@ -23,7 +23,11 @@ class HandleCaptcha
 
         try {
             $client = new Client(config('private-captcha.key'));
-            $output = $client->verify($solution);
+
+            // Passing the sitekey binds verification to this property. Without
+            // it the API accepts any solution the key can see, so a solution
+            // minted by another property's widget would pass here.
+            $output = $client->verify($solution, sitekey: config('private-captcha.sitekey'));
 
             if (!$output->isOK()) {
                 Log::warning('PrivateCaptcha verification rejected.', ['code' => (string) $output]);

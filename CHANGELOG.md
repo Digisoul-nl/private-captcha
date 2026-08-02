@@ -2,6 +2,18 @@
 
 All notable changes to `digisoul/private-captcha` are documented here.
 
+## Unreleased
+
+### Fixed
+
+- **Verification is now bound to the configured property.** `HandleCaptcha`
+  called `verify()` without a sitekey, so the API validated the solution against
+  the API key alone rather than against this specific property. A solution
+  minted by another property's widget under the same key would therefore be
+  accepted. The configured `private-captcha.sitekey` is now passed through,
+  which sends the `X-PC-Sitekey` header and scopes verification correctly.
+  (`src/Listeners/HandleCaptcha.php`)
+
 ## v1.1.1
 
 ### Fixed
