@@ -18,7 +18,7 @@ class HandleCaptcha
         $solution = request()->input('private_captcha_solution');
 
         if (!$solution) {
-            throw ValidationException::withMessages(['captcha' => 'Invalid Captcha.']);
+            throw ValidationException::withMessages(['captcha' => __('Invalid Captcha.')]);
         }
 
         try {
@@ -32,7 +32,7 @@ class HandleCaptcha
             if (!$output->isOK()) {
                 Log::warning('PrivateCaptcha verification rejected.', ['code' => (string) $output]);
 
-                throw ValidationException::withMessages(['captcha' => 'Invalid Captcha.']);
+                throw ValidationException::withMessages(['captcha' => __('Invalid Captcha.')]);
             }
         } catch (PrivateCaptchaException $e) {
             // Covers an empty/invalid solution (SolutionException), API errors
@@ -41,7 +41,7 @@ class HandleCaptcha
             // instead of a 500.
             Log::warning('PrivateCaptcha verification failed.', ['exception' => $e->getMessage()]);
 
-            throw ValidationException::withMessages(['captcha' => 'Invalid Captcha.']);
+            throw ValidationException::withMessages(['captcha' => __('Invalid Captcha.')]);
         }
     }
 }
