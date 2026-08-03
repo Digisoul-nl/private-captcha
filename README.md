@@ -32,14 +32,17 @@ add the {{ captcha }} tag in your form
 
 add a display parameter if needed:
 
+- `{{ captcha }}` and `{{ captcha display="widget" }}` render a visible
+  checkbox that the visitor must tick before a solution is computed. That
+  makes an automated submission more expensive than a fully automatic widget,
+  at the cost of an extra click. The injected script blocks submission and
+  scrolls the widget into view until the visitor ticks it, and then waits for
+  the solution before posting.
 - `{{ captcha display="hidden" }}` renders an invisible widget that solves
   itself in the background. The injected script holds the form submission
   until the captcha solution has been computed before posting.
-- `{{ captcha display="widget" }}` (and `display="popup"`) renders a visible
-  checkbox that the visitor must tick before a solution is computed. That
-  makes an automated submission more expensive than with a fully automatic
-  widget, at the cost of an extra click. The injected script blocks
-  submission and scrolls the widget into view until the visitor ticks it,
-  and then waits for the solution before posting.
+
+`display="popup"` is passed through to the widget but is not covered by the
+injected script beyond the hidden-widget handling, and is untested here.
 
 

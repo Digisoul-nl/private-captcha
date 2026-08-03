@@ -4,24 +4,34 @@ All notable changes to `digisoul/private-captcha` are documented here.
 
 ## Unreleased
 
-### Added
+### Changed
 
-- **Visible widgets now require an actual click to solve.** A fully automatic
-  widget (the previous behavior for every display mode) computes its solution
-  on page load, so a scripted client gets one without ever rendering the page.
-  `{{ captcha display="widget" }}` and `display="popup"` now render with
-  `data-start-mode="click"`, so the visitor has to tick the checkbox before a
-  solution is computed. That raises the cost of an automated submission — it
-  now takes real DOM interaction — rather than ruling one out. The injected
-  script detects the mode from the widget's own `data-start-mode` attribute:
-  hidden/auto widgets still block-and-poll for their background solution as
-  before, while click widgets block submission and point the visitor at the
-  widget until they tick it. `display="hidden"` (and the default `"auto"`) are
+- **Visible widgets now require an actual click to solve, and are the
+  default.** A fully automatic widget (the previous behavior for every display
+  mode) computes its solution on page load, so a scripted client gets one
+  without ever rendering the page. `{{ captcha display="widget" }}` now renders
+  with `data-start-mode="click"`, so the visitor has to tick the checkbox
+  before a solution is computed. That raises the cost of an automated
+  submission — it now takes real DOM interaction — rather than ruling one out.
+  The injected script detects the mode from the widget's own
+  `data-start-mode` attribute: automatic widgets still block-and-poll for
+  their background solution as before, while click widgets block submission and
+  point the visitor at the widget until they tick it. `display="hidden"` is
   unaffected. (`src/Tags/Captcha.php`, `resources/views/captcha.antlers.html`,
   `resources/views/captcha-script.html`)
 
-  Note this changes the behavior of existing `display="widget"` usage: the
-  visitor now has an extra click to make before the form will submit.
+  **This is a breaking behavior change for every site that does not set
+  `display="hidden"`.** The tag's default `display` was `"auto"`, which is not
+  a display mode the widget recognises — it kept the value verbatim, matched
+  none of `hidden`/`popup`/`widget`, and so rendered a visible widget through
+  an untested path, while still solving automatically. The default is now
+  `"widget"`, the widget's own default, which means a plain `{{ captcha }}`
+  also requires the extra click. Sites that want the old hands-off behavior
+  should switch to `{{ captcha display="hidden" }}`.
+
+  `display="popup"` stays on `data-start-mode="auto"`. A popup only becomes
+  visible via `execute()`, which the click path never calls, so click mode
+  would leave the visitor with no widget to tick and no way to submit.
 
 ### Fixed
 
@@ -31,10 +41,10 @@ All notable changes to `digisoul/private-captcha` are documented here.
   "not solved yet", showed the "confirm you are not a robot" hint to a visitor
   who had just confirmed exactly that, and never released the submission once
   the solution arrived — the visitor had to press submit a second time. The
-  script now tracks the widget's `privatecaptcha:checked` event and, for a
-  visitor who has already ticked, waits for the solution using the same
-  poll-and-release path as the automatic widgets. The hint is shown only when
-  the box genuinely has not been ticked.
+  script now tracks the widget's `privatecaptcha:checked` and
+  `privatecaptcha:start` events and, for a visitor who has already ticked,
+  waits for the solution using the same poll-and-release path as the automatic
+  widgets. The hint is shown only when the box genuinely has not been ticked.
   (`resources/views/captcha-script.html`)
 - **Repeated submit clicks no longer stack polling timers.** Pressing submit
   again while a submission was being held started a second interval, so the

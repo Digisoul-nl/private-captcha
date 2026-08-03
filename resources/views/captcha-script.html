@@ -3,14 +3,14 @@
     // Two widget modes are supported, distinguished by the rendered
     // data-start-mode attribute:
     //
-    // - "auto" (hidden/default widgets): the puzzle solves itself in the
+    // - "auto" (display="hidden" and "popup"): the puzzle solves itself in the
     //   background and writes its solution into the form asynchronously.
     //   Submitting before that finishes would POST an empty
     //   `private_captcha_solution`, so we block the submit, kick off
     //   execute(), and poll for the solution (with a safety timeout) before
     //   letting the form go.
-    // - "click" (display="widget"/"popup"): the visitor must tick the checkbox
-    //   themselves before solving starts. There is nothing to execute() here.
+    // - "click" (display="widget", the default): the visitor must tick the
+    //   checkbox themselves before solving starts. Nothing to execute() here.
     //   Ticking the box fires `privatecaptcha:checked` immediately, but the
     //   proof-of-work still runs for a second or so afterwards — so a submit
     //   that arrives in between waits for the solution just like auto mode,
@@ -40,11 +40,16 @@
             let waiting = false;
             let userStarted = false;
 
-            // Fired the moment the visitor ticks the checkbox — well before the
-            // proof-of-work finishes and writes the solution into the form.
-            widget.addEventListener("privatecaptcha:checked", () => {
-                userStarted = true;
-                if (hint) hint.hidden = true;
+            // `checked` fires the moment the visitor ticks the box, `start` once
+            // the proof-of-work actually begins — both well before the solution
+            // exists. We listen for either: `checked` is dispatched by the
+            // widget's internals and is not part of the documented API, so
+            // `start` is the fallback if a future widget release drops it.
+            ["privatecaptcha:checked", "privatecaptcha:start"].forEach((name) => {
+                widget.addEventListener(name, () => {
+                    userStarted = true;
+                    if (hint) hint.hidden = true;
+                });
             });
 
             // Hold the POST until the solution field is populated (with a safety

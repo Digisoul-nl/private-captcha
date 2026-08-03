@@ -21,12 +21,17 @@ class Captcha extends Tags
             Log::warning('PrivateCaptcha sitekey is missing. CAPTCHA will not function properly.');
         }
 
-        $display = $this->params->get('display', 'auto');
+        // "widget" is the widget's own default. The previous default here was
+        // "auto", which is not a display mode the widget knows: it kept the
+        // value as-is, matched none of hidden/popup/widget, and so rendered a
+        // visible widget through an untested code path.
+        $display = $this->params->get('display', 'widget');
 
-        // Visible widgets only start solving once the visitor ticks the box;
-        // hidden ones keep solving in the background. The widget documents
-        // "click" for popup mode too, since it renders on interaction anyway.
-        $clickToSolve = in_array($display, ['widget', 'popup'], true);
+        // A visible widget only starts solving once the visitor ticks the box.
+        // Hidden widgets keep solving in the background, and "popup" is left on
+        // auto: it only ever becomes visible through execute(), which the click
+        // path never calls, so click mode would leave the form unsubmittable.
+        $clickToSolve = $display === 'widget';
 
         return view('privateCaptcha::captcha', [
             'display' => $display,
