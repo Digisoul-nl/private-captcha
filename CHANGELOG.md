@@ -2,6 +2,41 @@
 
 All notable changes to `digisoul/private-captcha` are documented here.
 
+## v2.0.1
+
+### Fixed
+
+- **A widget that fails no longer posts its error sentinel and blames the
+  visitor.** When the puzzle cannot be loaded — a network problem, a blocked
+  request, a property the site's domain is not allowed to use — the widget does
+  not leave its solution field empty. It writes a short error sentinel
+  (`AQMAAAAAAA==.`) into it. `solutionValue()` only tested for a non-empty
+  field, so the submit guard read that sentinel as "already solved", released
+  the POST immediately, and the server answered with a flat "Invalid Captcha."
+  for a visitor who had ticked the box and done nothing wrong. There was no way
+  to recover: every retry produced the same sentinel and the same rejection.
+
+  Solving is now judged by the widget's `privatecaptcha:error` event rather
+  than by the field alone, so a failed widget never counts as solved. On submit
+  the form is held back and a distinct message — "Verification is unavailable
+  right now. Please reload the page and try again." — is shown next to the
+  widget instead of spending a round-trip to be told the solution was invalid.
+  Ticking the box again clears the failure, so a widget that recovers is not
+  held against the visitor. (`resources/views/captcha-script.html`,
+  `resources/views/captcha.antlers.html`)
+
+  The same check also applies while a submission is being held: a widget that
+  gives up mid-wait now stops the wait and shows the message, where before it
+  released the sentinel as if it were a solution.
+
+  This has been present since the poll-and-release path was introduced in
+  v1.1.1; it is not specific to the click widgets added in v2.0.0.
+
+  **Template note:** the message is a new `[data-captcha-error]` element in the
+  captcha view. Sites that have published their own copy of
+  `resources/views/vendor/private-captcha/captcha.antlers.html` need to add it,
+  or the submit is still blocked but silently.
+
 ## v2.0.0
 
 ### Changed
