@@ -35,10 +35,11 @@ add a display parameter if needed:
 - `{{ captcha display="hidden" }}` renders an invisible widget that solves
   itself in the background. The injected script holds the form submission
   until the captcha solution has been computed before posting.
-- `{{ captcha display="widget" }}` renders a visible checkbox that the
-  visitor must click before a solution is computed. This closes off the
-  headless-browser bypass a fully automatic widget is exposed to, at the
-  cost of an extra click. The injected script blocks submission and scrolls
-  the widget into view until the visitor solves it.
+- `{{ captcha display="widget" }}` (and `display="popup"`) renders a visible
+  checkbox that the visitor must tick before a solution is computed. That
+  makes an automated submission more expensive than with a fully automatic
+  widget, at the cost of an extra click. The injected script blocks
+  submission and scrolls the widget into view until the visitor ticks it,
+  and then waits for the solution before posting.
 
 

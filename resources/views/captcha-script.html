@@ -9,10 +9,12 @@
     //   `private_captcha_solution`, so we block the submit, kick off
     //   execute(), and poll for the solution (with a safety timeout) before
     //   letting the form go.
-    // - "click" (display="widget"): the visitor must tick the checkbox
-    //   themselves before a solution exists. There is nothing to execute()
-    //   here — if the solution is missing we just block the submit and point
-    //   the visitor at the widget.
+    // - "click" (display="widget"/"popup"): the visitor must tick the checkbox
+    //   themselves before solving starts. There is nothing to execute() here.
+    //   Ticking the box fires `privatecaptcha:checked` immediately, but the
+    //   proof-of-work still runs for a second or so afterwards — so a submit
+    //   that arrives in between waits for the solution just like auto mode,
+    //   and only a submit from a visitor who never ticked gets the hint.
     document.addEventListener("DOMContentLoaded", () => {
         const SOLUTION_FIELD = "private_captcha_solution";
         const MAX_WAIT_MS = 8000;
@@ -35,27 +37,21 @@
             const hint = form.querySelector("[data-captcha-hint]");
             const clickToSolve = widget.dataset.startMode === "click";
             let releasing = false;
+            let waiting = false;
+            let userStarted = false;
 
-            form.addEventListener("submit", (event) => {
-                if (releasing || solutionValue(form)) {
-                    if (hint) hint.style.display = "none";
-                    sessionStorage.setItem("restoreScroll", window.scrollY);
-                    return;
-                }
+            // Fired the moment the visitor ticks the checkbox — well before the
+            // proof-of-work finishes and writes the solution into the form.
+            widget.addEventListener("privatecaptcha:checked", () => {
+                userStarted = true;
+                if (hint) hint.hidden = true;
+            });
 
-                event.preventDefault();
-
-                if (clickToSolve) {
-                    if (hint) hint.style.display = "";
-                    widget.scrollIntoView({ block: "center", behavior: "smooth" });
-                    return;
-                }
-
-                try {
-                    window.privateCaptcha?.autoWidget?.execute();
-                } catch (e) {
-                    /* widget not ready; the poll below will time out and submit */
-                }
+            // Hold the POST until the solution field is populated (with a safety
+            // timeout), then let the native submission through.
+            const releaseWhenSolved = () => {
+                if (waiting) return;
+                waiting = true;
 
                 const startedAt = Date.now();
                 const timer = setInterval(() => {
@@ -71,6 +67,37 @@
                         }
                     }
                 }, POLL_INTERVAL_MS);
+            };
+
+            form.addEventListener("submit", (event) => {
+                if (releasing || solutionValue(form)) {
+                    if (hint) hint.hidden = true;
+                    sessionStorage.setItem("restoreScroll", window.scrollY);
+                    return;
+                }
+
+                event.preventDefault();
+
+                if (clickToSolve) {
+                    // Never ticked: no solution is coming, so ask the visitor.
+                    if (!userStarted) {
+                        if (hint) hint.hidden = false;
+                        widget.scrollIntoView({ block: "center", behavior: "smooth" });
+                        return;
+                    }
+
+                    // Ticked, still solving: wait it out instead of nagging.
+                    releaseWhenSolved();
+                    return;
+                }
+
+                try {
+                    window.privateCaptcha?.autoWidget?.execute();
+                } catch (e) {
+                    /* widget not ready; the poll below will time out and submit */
+                }
+
+                releaseWhenSolved();
             });
         });
 
