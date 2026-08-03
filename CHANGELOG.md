@@ -2,7 +2,7 @@
 
 All notable changes to `digisoul/private-captcha` are documented here.
 
-## Unreleased
+## v2.0.0
 
 ### Changed
 
