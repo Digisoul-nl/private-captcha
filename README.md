@@ -30,8 +30,15 @@ add the {{ captcha:script }} in the head
 
 add the {{ captcha }} tag in your form
 
-add a display parameter if needed, e.g. `{{ captcha display="hidden" }}` for a
-hidden widget. Hidden widgets are fully supported: the injected script holds the
-form submission until the captcha solution has been computed before posting.
+add a display parameter if needed:
+
+- `{{ captcha display="hidden" }}` renders an invisible widget that solves
+  itself in the background. The injected script holds the form submission
+  until the captcha solution has been computed before posting.
+- `{{ captcha display="widget" }}` renders a visible checkbox that the
+  visitor must click before a solution is computed. This closes off the
+  headless-browser bypass a fully automatic widget is exposed to, at the
+  cost of an extra click. The injected script blocks submission and scrolls
+  the widget into view until the visitor solves it.
 
 

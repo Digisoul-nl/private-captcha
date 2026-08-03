@@ -2,6 +2,23 @@
 
 All notable changes to `digisoul/private-captcha` are documented here.
 
+## Unreleased
+
+### Added
+
+- **`display="widget"` now requires an actual click to solve.** A fully
+  automatic widget (the previous behavior for every display mode) computes
+  its solution on page load, which headless browsers clear for free without
+  ever rendering the page. `{{ captcha display="widget" }}` now renders with
+  `data-start-mode="click"`, so the visitor must tick the checkbox before a
+  solution exists. The injected script detects the mode from the widget's own
+  `data-start-mode` attribute: hidden/auto widgets still block-and-poll for
+  their background solution as before, while click widgets just block
+  submission and scroll the visitor to the widget with a hint message until
+  they solve it. `display="hidden"` (and the default `"auto"`) are
+  unaffected. (`src/Tags/Captcha.php`, `resources/views/captcha.antlers.html`,
+  `resources/views/captcha-script.html`)
+
 ## v1.1.1
 
 ### Fixed

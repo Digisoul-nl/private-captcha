@@ -21,8 +21,11 @@ class Captcha extends Tags
             Log::warning('PrivateCaptcha sitekey is missing. CAPTCHA will not function properly.');
         }
 
+        $display = $this->params->get('display', 'auto');
+
         return view('privateCaptcha::captcha', [
-            'display' => $this->params->get('display', 'auto'),
+            'display' => $display,
+            'start_mode' => $display === 'widget' ? 'click' : 'auto',
             'sitekey' => $sitekey,
         ]);
     }

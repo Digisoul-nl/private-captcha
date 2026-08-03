@@ -1,10 +1,18 @@
 <script defer src="https://cdn.privatecaptcha.com/widget/js/privatecaptcha.js"></script>
 <script>
-    // With a hidden widget (data-display-mode="hidden") the captcha only writes
-    // its solution into the form AFTER execute() runs. Calling execute() on submit
-    // without waiting POSTs the form with an empty `private_captcha_solution`, so
-    // the server rejects it with "Invalid Captcha.". Here we hold the submission
-    // until the solution is present (with a safety timeout) before letting it go.
+    // Two widget modes are supported, distinguished by the rendered
+    // data-start-mode attribute:
+    //
+    // - "auto" (hidden/default widgets): the puzzle solves itself in the
+    //   background and writes its solution into the form asynchronously.
+    //   Submitting before that finishes would POST an empty
+    //   `private_captcha_solution`, so we block the submit, kick off
+    //   execute(), and poll for the solution (with a safety timeout) before
+    //   letting the form go.
+    // - "click" (display="widget"): the visitor must tick the checkbox
+    //   themselves before a solution exists. There is nothing to execute()
+    //   here — if the solution is missing we just block the submit and point
+    //   the visitor at the widget.
     document.addEventListener("DOMContentLoaded", () => {
         const SOLUTION_FIELD = "private_captcha_solution";
         const MAX_WAIT_MS = 8000;
@@ -21,21 +29,27 @@
         };
 
         document.querySelectorAll("form").forEach((form) => {
-            // Only manage forms that actually contain a captcha widget.
-            if (!form.querySelector(".private-captcha")) return;
+            const widget = form.querySelector(".private-captcha");
+            if (!widget) return;
 
+            const hint = form.querySelector("[data-captcha-hint]");
+            const clickToSolve = widget.dataset.startMode === "click";
             let releasing = false;
 
             form.addEventListener("submit", (event) => {
-                // Second pass (after requestSubmit) or solution already present:
-                // let the native submission proceed.
                 if (releasing || solutionValue(form)) {
+                    if (hint) hint.style.display = "none";
                     sessionStorage.setItem("restoreScroll", window.scrollY);
                     return;
                 }
 
-                // No solution yet: block the POST, finalize the captcha, then submit.
                 event.preventDefault();
+
+                if (clickToSolve) {
+                    if (hint) hint.style.display = "";
+                    widget.scrollIntoView({ block: "center", behavior: "smooth" });
+                    return;
+                }
 
                 try {
                     window.privateCaptcha?.autoWidget?.execute();
