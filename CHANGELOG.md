@@ -46,6 +46,17 @@ All notable changes to `digisoul/private-captcha` are documented here.
   waits for the solution using the same poll-and-release path as the automatic
   widgets. The hint is shown only when the box genuinely has not been ticked.
   (`resources/views/captcha-script.html`)
+- **The submit hold no longer times out while a click widget is still
+  solving.** The 8s budget was written for automatic widgets, which start
+  solving on page load or first focus and have therefore nearly always
+  finished by the time the visitor submits. A click widget starts when the box
+  is ticked, so the entire proof-of-work has to fit in that budget — on a
+  low-end phone it does not, and the form was posted with an empty solution
+  and rejected as "Invalid Captcha." for a visitor who did everything right.
+  Click widgets now get 30s; automatic widgets keep the 8s they had. The hold
+  is also released straight away on the widget's `privatecaptcha:error` event,
+  so a widget that gives up does not keep the form waiting out the full
+  budget. (`resources/views/captcha-script.html`)
 - **Repeated submit clicks no longer stack polling timers.** Pressing submit
   again while a submission was being held started a second interval, so the
   form could be submitted more than once. The poll is now started at most once
