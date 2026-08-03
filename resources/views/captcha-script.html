@@ -43,12 +43,32 @@
             if (!widget) return;
 
             const hint = form.querySelector("[data-captcha-hint]");
+            const errorMessage = form.querySelector("[data-captcha-error]");
             const clickToSolve = widget.dataset.startMode === "click";
             const maxWaitMs = clickToSolve ? CLICK_MAX_WAIT_MS : AUTO_MAX_WAIT_MS;
             let releasing = false;
             let waiting = false;
             let userStarted = false;
             let failed = false;
+
+            const hideMessages = () => {
+                if (hint) hint.hidden = true;
+                if (errorMessage) errorMessage.hidden = true;
+            };
+
+            const showUnavailable = () => {
+                hideMessages();
+                if (errorMessage) errorMessage.hidden = false;
+                widget.scrollIntoView({ block: "center", behavior: "smooth" });
+            };
+
+            // A widget that has given up does not leave its solution field
+            // empty — it writes a short error sentinel into it. A non-empty
+            // field is therefore not proof that the puzzle was solved, so every
+            // check below asks for a solution *and* for the widget not having
+            // failed. Trusting the field alone posts the sentinel and earns a
+            // flat "Invalid Captcha." from the server.
+            const solved = () => !failed && solutionValue(form);
 
             // `checked` fires the moment the visitor ticks the box, `start` once
             // the proof-of-work actually begins — both well before the solution
@@ -58,13 +78,16 @@
             ["privatecaptcha:checked", "privatecaptcha:start"].forEach((name) => {
                 widget.addEventListener(name, () => {
                     userStarted = true;
-                    if (hint) hint.hidden = true;
+                    // A fresh attempt: whatever failed before no longer applies.
+                    failed = false;
+                    hideMessages();
                 });
             });
 
-            // The widget gave up (network, worker error). No solution is coming,
-            // so stop holding the form hostage for the rest of the budget and
-            // let the server reject it with its own message.
+            // The widget gave up (network, worker error, misconfigured
+            // property). No solution is coming, so stop holding the form for the
+            // rest of the budget — but do not release it either, because the
+            // only thing left to post is the sentinel.
             widget.addEventListener("privatecaptcha:error", () => {
                 failed = true;
             });
@@ -77,8 +100,17 @@
 
                 const startedAt = Date.now();
                 const timer = setInterval(() => {
-                    const ready = solutionValue(form);
-                    if (ready || failed || Date.now() - startedAt > maxWaitMs) {
+                    // Failed while we were holding the form: say so and let the
+                    // visitor retry here, instead of spending a round-trip to
+                    // have the server reject the sentinel.
+                    if (failed) {
+                        clearInterval(timer);
+                        waiting = false;
+                        showUnavailable();
+                        return;
+                    }
+
+                    if (solved() || Date.now() - startedAt > maxWaitMs) {
                         clearInterval(timer);
                         releasing = true;
                         sessionStorage.setItem("restoreScroll", window.scrollY);
@@ -92,17 +124,25 @@
             };
 
             form.addEventListener("submit", (event) => {
-                if (releasing || solutionValue(form)) {
-                    if (hint) hint.hidden = true;
+                if (releasing || solved()) {
+                    hideMessages();
                     sessionStorage.setItem("restoreScroll", window.scrollY);
                     return;
                 }
 
                 event.preventDefault();
 
+                // Nothing is coming from a widget that has already failed, in
+                // either mode.
+                if (failed) {
+                    showUnavailable();
+                    return;
+                }
+
                 if (clickToSolve) {
                     // Never ticked: no solution is coming, so ask the visitor.
                     if (!userStarted) {
+                        hideMessages();
                         if (hint) hint.hidden = false;
                         widget.scrollIntoView({ block: "center", behavior: "smooth" });
                         return;
